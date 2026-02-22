@@ -8,17 +8,20 @@
             <local:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
             <local:ColorToBrushConverter x:Key="ColorToBrush"/>
             <local:InverseBoolConverter x:Key="InverseBool"/>
-            <SolidColorBrush x:Key="PanelBackground" Color="#1E1E1E"/>
-            <SolidColorBrush x:Key="PanelBorder" Color="#333333"/>
-            <SolidColorBrush x:Key="ToolbarBackground" Color="#252525"/>
-            <SolidColorBrush x:Key="CanvasBackground" Color="#121212"/>
-            <SolidColorBrush x:Key="TextForeground" Color="#E0E0E0"/>
-            <SolidColorBrush x:Key="TextMuted" Color="#888888"/>
-            <SolidColorBrush x:Key="AccentBrush" Color="#00AAFF"/>
-            <SolidColorBrush x:Key="AccentHover" Color="#33BBFF"/>
-            <SolidColorBrush x:Key="SelectedBrush" Color="#0078D4"/>
-            <SolidColorBrush x:Key="InputBackground" Color="#2D2D2D"/>
-            <SolidColorBrush x:Key="SplitterBrush" Color="#404040"/>
+
+            <SolidColorBrush x:Key="PanelBackground" Color="#0D0D0D"/>
+            <SolidColorBrush x:Key="PanelBorder" Color="#1A1A1A"/>
+            <SolidColorBrush x:Key="ToolbarBackground" Color="#111111"/>
+            <SolidColorBrush x:Key="CanvasBackground" Color="#080808"/>
+            <SolidColorBrush x:Key="TextForeground" Color="#F0F0F0"/>
+            <SolidColorBrush x:Key="TextMuted" Color="#666666"/>
+            <SolidColorBrush x:Key="AccentBrush" Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="AccentHover" Color="#CCCCCC"/>
+            <SolidColorBrush x:Key="SelectedBrush" Color="#333333"/>
+            <SolidColorBrush x:Key="InputBackground" Color="#161616"/>
+            <SolidColorBrush x:Key="SplitterBrush" Color="#1A1A1A"/>
+            <SolidColorBrush x:Key="HoverBrush" Color="#1E1E1E"/>
+            <SolidColorBrush x:Key="BorderSubtle" Color="#222222"/>
 
             <Style TargetType="GridSplitter">
                 <Setter Property="Background" Value="{StaticResource SplitterBrush}"/>
@@ -26,28 +29,43 @@
             </Style>
 
             <Style x:Key="PanelHeader" TargetType="TextBlock">
-                <Setter Property="Foreground" Value="{StaticResource TextForeground}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="FontSize" Value="12"/>
-                <Setter Property="Margin" Value="8,6"/>
+                <Setter Property="FontSize" Value="10"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="Margin" Value="10,8"/>
             </Style>
 
             <Style x:Key="ToolbarButton" TargetType="Button">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="Foreground" Value="{StaticResource TextForeground}"/>
                 <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Padding" Value="10,5"/>
-                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Padding" Value="12,6"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
                 <Setter Property="Cursor" Value="Hand"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#3A3A3A"/>
+                        <Setter Property="Background" Value="{StaticResource HoverBrush}"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
 
             <Style x:Key="MenuItemStyle" TargetType="MenuItem">
                 <Setter Property="Foreground" Value="{StaticResource TextForeground}"/>
+            </Style>
+
+            <Style TargetType="ToolTip">
+                <Setter Property="Background" Value="#1A1A1A"/>
+                <Setter Property="Foreground" Value="#F0F0F0"/>
+                <Setter Property="BorderBrush" Value="#333333"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="Padding" Value="8,4"/>
+            </Style>
+
+            <Style TargetType="ScrollBar">
+                <Setter Property="Width" Value="6"/>
             </Style>
         </ResourceDictionary>
     </Application.Resources>

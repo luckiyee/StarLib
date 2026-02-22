@@ -72,8 +72,8 @@
                 <Button Content="Undo" Command="{Binding UndoCommand}" Style="{StaticResource ToolbarButton}"/>
                 <Button Content="Redo" Command="{Binding RedoCommand}" Style="{StaticResource ToolbarButton}"/>
                 <Separator/>
-                <Button Content="Run Emulator" Command="{Binding OpenEmulatorCommand}" Style="{StaticResource ToolbarButton}"
-                        Foreground="{StaticResource AccentBrush}" FontWeight="Bold"/>
+                <Button Content="▶ Run Emulator" Command="{Binding OpenEmulatorCommand}" Style="{StaticResource ToolbarButton}"
+                        Foreground="#FFFFFF" FontWeight="Bold"/>
                 <Separator/>
                 <Button Content="Export Lua" Command="{Binding ExportLuaCommand}" Style="{StaticResource ToolbarButton}"/>
                 <Button Content="Copy Lua" Command="{Binding CopyLuaToClipboardCommand}" Style="{StaticResource ToolbarButton}"/>

@@ -51,8 +51,8 @@ public partial class CodePanel : UserControl
   <RuleSet>
     <Span color=""Comment"" begin=""--\[\["" end=""\]\]"" multiline=""true"" />
     <Span color=""Comment"" begin=""--"" />
-    <Span color=""String"" begin=""&quot;"" end=""&quot;"" escapeCharacter=""\\"" />
-    <Span color=""String"" begin=""'"" end=""'"" escapeCharacter=""\\"" />
+    <Span color=""String"" begin=""&quot;"" end=""&quot;"" />
+    <Span color=""String"" begin=""'"" end=""'"" />
     <Span color=""String"" begin=""\[\["" end=""\]\]"" multiline=""true"" />
 
     <Keywords color=""Keyword"">

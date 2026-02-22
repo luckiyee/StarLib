@@ -46,11 +46,12 @@
 
         <!-- Code editor -->
         <avalonedit:TextEditor x:Name="CodeEditor"
-                               FontFamily="Consolas" FontSize="12"
-                               Background="#1A1A1A" Foreground="#D4D4D4"
+                               FontFamily="Cascadia Mono, Consolas, monospace" FontSize="12"
+                               Background="#0A0A0A" Foreground="#D4D4D4"
                                ShowLineNumbers="True"
                                IsReadOnly="{Binding IsEditMode, Converter={StaticResource InverseBool}}"
                                HorizontalScrollBarVisibility="Auto"
-                               VerticalScrollBarVisibility="Auto"/>
+                               VerticalScrollBarVisibility="Auto"
+                               Padding="4"/>
     </DockPanel>
 </UserControl>
