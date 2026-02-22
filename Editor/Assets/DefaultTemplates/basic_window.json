@@ -1,0 +1,9 @@
+{
+  "id": "tpl-basic-window",
+  "name": "Basic Window",
+  "nodes": [
+    { "id": "n1", "type": "Section", "props": { "Text": "General" }, "enabled": true, "visible": true },
+    { "id": "n2", "type": "Button", "props": { "Name": "Click Me" }, "enabled": true, "visible": true },
+    { "id": "n3", "type": "Toggle", "props": { "Name": "Enable Feature", "CurrentValue": false }, "enabled": true, "visible": true }
+  ]
+}

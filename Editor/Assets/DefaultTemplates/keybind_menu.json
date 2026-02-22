@@ -1,0 +1,11 @@
+{
+  "id": "tpl-keybind-menu",
+  "name": "Keybind Menu",
+  "nodes": [
+    { "id": "n1", "type": "Section", "props": { "Text": "Keybinds" }, "enabled": true, "visible": true },
+    { "id": "n2", "type": "Keybind", "props": { "Name": "Toggle GUI", "Default": "RightShift" }, "enabled": true, "visible": true },
+    { "id": "n3", "type": "Keybind", "props": { "Name": "Fly", "Default": "F" }, "enabled": true, "visible": true },
+    { "id": "n4", "type": "Keybind", "props": { "Name": "Noclip", "Default": "N" }, "enabled": true, "visible": true },
+    { "id": "n5", "type": "Keybind", "props": { "Name": "Speed Boost", "Default": "X" }, "enabled": true, "visible": true }
+  ]
+}

@@ -1,0 +1,18 @@
+<UserControl x:Class="StarLibEditor.Views.InspectorPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:StarLibEditor.ViewModels"
+             Background="{StaticResource PanelBackground}">
+
+    <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="INSPECTOR" Style="{StaticResource PanelHeader}"/>
+        <TextBlock DockPanel.Dock="Top" Text="{Binding HeaderText}" Foreground="{StaticResource AccentBrush}"
+                   FontSize="11" FontWeight="Bold" Margin="8,0,8,6"/>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="PropertiesPanel" Margin="8,0">
+                <!-- Properties dynamically built in code-behind -->
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

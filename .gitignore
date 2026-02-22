@@ -1,0 +1,29 @@
+## .NET
+bin/
+obj/
+dist/
+publish/
+*.user
+*.suo
+*.cache
+*.vs/
+.vs/
+*.nupkg
+
+## IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+## OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+## Build artifacts
+*.exe
+!StarLibEditor.exe
+
+## User data
+%AppData%/StarLibEditor/
