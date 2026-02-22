@@ -12,6 +12,7 @@
     <Authors>StarLib Team</Authors>
     <Description>Visual Lua UI Editor for StarLib</Description>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\Icons\starlib.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

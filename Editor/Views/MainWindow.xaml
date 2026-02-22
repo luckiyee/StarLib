@@ -6,7 +6,8 @@
         Title="{Binding TitleText}" Height="800" Width="1400"
         MinHeight="600" MinWidth="900"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource PanelBackground}">
+        Background="{StaticResource PanelBackground}"
+        Icon="/Assets/Icons/starlib.ico">
 
     <Window.DataContext>
         <vm:MainWindowViewModel/>
