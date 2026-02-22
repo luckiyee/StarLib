@@ -24,7 +24,7 @@
                     <Border x:Name="MockupFrame" Width="600" Height="400"
                             Background="#181818" CornerRadius="8"
                             BorderBrush="#333" BorderThickness="1"
-                            Effect="{x:Null}">
+                            >
                         <Border.Effect>
                             <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="4" Opacity="0.5"/>
                         </Border.Effect>
