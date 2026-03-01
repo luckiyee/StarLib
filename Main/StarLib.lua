@@ -506,11 +506,79 @@ end
 function Window:_applySearch()
     local term = string.lower(self._searchTerm or "")
     for _, tab in ipairs(self._tabs) do
+        local shouldFilter = (tab == self._activeTab)
         for _, element in ipairs(tab._elements) do
-            local visible = term == "" or string.find(element._search, term, 1, true) ~= nil
+            local visible = true
+            if shouldFilter then
+                visible = term == "" or string.find(element._search, term, 1, true) ~= nil
+            end
             element._container.Visible = visible
         end
     end
+end
+
+function Window:_refreshLayout(instant)
+    if not self._layoutRefs then
+        return
+    end
+    local refs = self._layoutRefs
+    local sidebarWidth = self._sidebarExpanded and self._sidebarExpandedWidth or self._sidebarCollapsedWidth
+    local pageX = sidebarWidth + refs.pageGap
+    local pageOffset = -(pageX + refs.pageRightPadding)
+
+    local sidebarSize = UDim2.fromOffset(sidebarWidth, refs.bodyHeight)
+    local pagePos = UDim2.fromOffset(pageX, refs.pageTopPadding)
+    local pageSize = UDim2.new(1, pageOffset, 1, -(refs.pageTopPadding + refs.pageBottomPadding))
+
+    if instant then
+        refs.sidebar.Size = sidebarSize
+        refs.pageHolder.Position = pagePos
+        refs.pageHolder.Size = pageSize
+    else
+        tween(refs.sidebar, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = sidebarSize })
+        tween(refs.pageHolder, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Position = pagePos,
+            Size = pageSize,
+        })
+    end
+
+    refs.tabButtons.Visible = self._sidebarExpanded
+end
+
+function Window:_setSidebarExpanded(expanded, instant)
+    if self._sidebarExpanded == expanded then
+        return
+    end
+    self._sidebarExpanded = expanded
+    self:_refreshLayout(instant)
+end
+
+function Window:_setupSidebarAutoHide()
+    if not self._layoutRefs then
+        return
+    end
+    local refs = self._layoutRefs
+    local hoverPadding = 34
+    local edgePadding = 22
+
+    self._sidebarHoverConn = RunService.RenderStepped:Connect(function()
+        if not self._main.Visible then
+            return
+        end
+        local mouse = UserInputService:GetMouseLocation()
+        local mainPos = self._main.AbsolutePosition
+        local mainSize = self._main.AbsoluteSize
+        local inY = mouse.Y >= mainPos.Y and mouse.Y <= (mainPos.Y + mainSize.Y)
+        if not inY then
+            self:_setSidebarExpanded(false, false)
+            return
+        end
+
+        local nearLeftEdge = mouse.X <= (mainPos.X + edgePadding)
+        local overSidebarZone = mouse.X <= (mainPos.X + refs.sidebar.AbsoluteSize.X + hoverPadding)
+        local shouldExpand = nearLeftEdge or overSidebarZone
+        self:_setSidebarExpanded(shouldExpand, false)
+    end)
 end
 
 function Window:_setFlag(flag, value)
@@ -540,6 +608,9 @@ function Window:Destroy()
     end
     if self._inputConn then
         self._inputConn:Disconnect()
+    end
+    if self._sidebarHoverConn then
+        self._sidebarHoverConn:Disconnect()
     end
     self.Gui:Destroy()
 end
@@ -790,6 +861,7 @@ function Window:CreateTab(config)
         page.Visible = true
         button.BackgroundColor3 = self.Theme.TabActive
         self._activeTab = tab
+        self:_applySearch()
     end
     button.MouseButton1Click:Connect(activate)
 
@@ -1510,7 +1582,7 @@ function StarLib:CreateWindow(config)
             Size = UDim2.fromOffset(180, 26),
             BackgroundColor3 = theme.InputBackground,
             BorderSizePixel = 0,
-            PlaceholderText = "Search toggles...",
+            PlaceholderText = "Search command in tab...",
             PlaceholderColor3 = theme.SubText,
             TextColor3 = theme.Text,
             Font = Enum.Font.Gotham,
@@ -1602,7 +1674,20 @@ function StarLib:CreateWindow(config)
             CreatedAt = os.time(),
             SessionIndex = self._analytics.Sessions,
         },
+        _sidebarExpanded = true,
+        _sidebarExpandedWidth = 170,
+        _sidebarCollapsedWidth = 18,
     }, Window)
+    window._layoutRefs = {
+        sidebar = sidebar,
+        tabButtons = tabButtons,
+        pageHolder = pageHolder,
+        bodyHeight = 418,
+        pageGap = 8,
+        pageTopPadding = 8,
+        pageBottomPadding = 8,
+        pageRightPadding = 8,
+    }
     window._themeRefs = {
         main = main,
         topbar = topbar,
@@ -1613,6 +1698,8 @@ function StarLib:CreateWindow(config)
 
     window._notificationHolder = createNotificationContainer(gui)
     window._loadedFlags = window:LoadConfiguration()
+    window:_refreshLayout(true)
+    window:_setupSidebarAutoHide()
 
     local dragging, dragStart, startPos = false, nil, nil
     topbar.InputBegan:Connect(function(i)
