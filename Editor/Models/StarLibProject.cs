@@ -23,14 +23,15 @@ public partial class StarLibProject : ObservableObject
     {
         var project = new StarLibProject();
         project.Meta.ProjectName = "Untitled Project";
-        project.Meta.SchemaVersion = "1.0";
-        project.Meta.AppVersion = "1.0.0";
+        project.Meta.SchemaVersion = "2.0";
+        project.Meta.AppVersion = "2.0.0";
         project.Meta.CreatedAt = DateTime.UtcNow.ToString("o");
         project.Meta.UpdatedAt = project.Meta.CreatedAt;
 
         var mainTab = new TabModel { Name = "Main" };
         mainTab.Nodes.Add(new UINode(WidgetType.Section));
         mainTab.Nodes.Add(new UINode(WidgetType.Button));
+        mainTab.Nodes.Add(new UINode(WidgetType.Toggle));
         project.Tabs.Add(mainTab);
 
         return project;
@@ -50,7 +51,7 @@ public partial class ProjectMeta : ObservableObject
 public partial class ProjectSettings : ObservableObject
 {
     [ObservableProperty] private bool _useUpgradedStarLib = false;
-    [ObservableProperty] private string _starLibPath = "StarLib/StarLib.lua";
+    [ObservableProperty] private string _starLibPath = "Main/StarLib.lua";
     [ObservableProperty] private bool _bundleStarLib = true;
 }
 

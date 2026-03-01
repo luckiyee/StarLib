@@ -80,6 +80,7 @@ public partial class CodePanel : UserControl
       <Word>CreateToggle</Word><Word>CreateSlider</Word><Word>CreateDropdown</Word>
       <Word>CreateInput</Word><Word>CreateKeybind</Word><Word>CreateColorPicker</Word>
       <Word>CreateSection</Word><Word>CreateLabel</Word><Word>CreateParagraph</Word>
+      <Word>CreateStat</Word><Word>CreateSeparator</Word>
       <Word>Notify</Word><Word>Destroy</Word><Word>Hide</Word><Word>Show</Word>
     </Keywords>
 

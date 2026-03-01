@@ -86,7 +86,7 @@ public partial class DesignerCanvas : UserControl
             };
             var label = new TextBlock
             {
-                Text = "  " + tab.Name,
+                Text = $"  {(string.IsNullOrWhiteSpace(tab.Icon) ? "" : $"[{tab.Icon}] ")}{tab.Name}",
                 Foreground = new SolidColorBrush(isActive ? Colors.White : Color.FromRgb(200, 200, 200)),
                 FontSize = 14,
                 FontFamily = new FontFamily("Segoe UI Semibold")
@@ -264,7 +264,7 @@ public partial class DesignerCanvas : UserControl
             case WidgetType.Dropdown:
                 container.Child = CreateElementBorder(theme, new TextBlock
                 {
-                    Text = $"  {node.Props["Name"]}: {node.Props["Default"]}",
+                    Text = $"  {node.Props["Name"]}: {node.Props["CurrentOption"]}",
                     Foreground = Brushes.White,
                     FontSize = theme.TextSize,
                     VerticalAlignment = VerticalAlignment.Center,
@@ -399,6 +399,17 @@ public partial class DesignerCanvas : UserControl
                         FontWeight = FontWeights.SemiBold
                     }
                 };
+                break;
+
+            case WidgetType.Stat:
+                container.Child = CreateElementBorder(theme, new TextBlock
+                {
+                    Text = $"  {node.Props["Name"]}: {node.Props["Value"]}{node.Props["Suffix"]}",
+                    Foreground = Brushes.White,
+                    FontSize = theme.TextSize,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    FontFamily = new FontFamily("Segoe UI Semibold")
+                }, theme.ElementHeight);
                 break;
 
             default:

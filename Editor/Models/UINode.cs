@@ -45,40 +45,57 @@ public partial class UINode : ObservableObject
                 break;
             case WidgetType.Button:
                 p["Name"] = "Button";
+                p["Description"] = "";
+                p["Icon"] = "";
                 break;
             case WidgetType.Toggle:
                 p["Name"] = "Toggle";
+                p["Description"] = "";
                 p["CurrentValue"] = false;
+                p["Flag"] = "ToggleFlag";
                 break;
             case WidgetType.Slider:
                 p["Name"] = "Slider";
+                p["Description"] = "";
                 p["Min"] = 0.0;
                 p["Max"] = 100.0;
                 p["CurrentValue"] = 50.0;
                 p["Increment"] = 1.0;
                 p["Suffix"] = "";
+                p["Flag"] = "SliderFlag";
                 break;
             case WidgetType.Dropdown:
                 p["Name"] = "Dropdown";
+                p["Description"] = "";
                 p["Options"] = new ObservableCollection<string> { "Option 1", "Option 2", "Option 3" };
-                p["Default"] = "Option 1";
-                p["Searchable"] = false;
+                p["CurrentOption"] = "Option 1";
+                p["MultipleOptions"] = false;
+                p["Flag"] = "DropdownFlag";
                 break;
             case WidgetType.Input:
                 p["Name"] = "Input";
+                p["Description"] = "";
                 p["PlaceholderText"] = "...";
                 p["Default"] = "";
-                p["ClearOnEnter"] = false;
+                p["RemoveTextAfterFocusLost"] = false;
+                p["Flag"] = "InputFlag";
                 break;
             case WidgetType.Keybind:
                 p["Name"] = "Keybind";
                 p["Default"] = "F";
+                p["HoldToInteract"] = false;
+                p["Flag"] = "KeybindFlag";
                 break;
             case WidgetType.ColorPicker:
                 p["Name"] = "Color";
                 p["Default"] = "#FFFFFF";
-                p["Alpha"] = false;
-                p["LivePreview"] = true;
+                p["Description"] = "";
+                p["Flag"] = "ColorFlag";
+                break;
+            case WidgetType.Stat:
+                p["Name"] = "Status";
+                p["Value"] = "0";
+                p["Suffix"] = "";
                 break;
             case WidgetType.Separator:
                 break;

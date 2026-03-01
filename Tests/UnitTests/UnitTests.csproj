@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\StarLibEditor\StarLibEditor.csproj" />
+    <ProjectReference Include="..\..\Editor\StarLibEditor.csproj" />
   </ItemGroup>
 
 </Project>

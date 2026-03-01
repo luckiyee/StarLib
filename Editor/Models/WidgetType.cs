@@ -2,7 +2,7 @@ namespace StarLibEditor.Models;
 
 public enum WidgetType
 {
-    // Original StarLib widgets
+    // Core Rayfield-style widgets
     Section,
     Label,
     Paragraph,
@@ -13,8 +13,9 @@ public enum WidgetType
     Input,
     Keybind,
     ColorPicker,
+    Stat,
 
-    // StarLib upgraded widgets
+    // Extra layout/display widgets retained for compatibility
     Separator,
     Spacer,
     ProgressBar,

@@ -46,6 +46,97 @@ public partial class ThemeModel : ObservableObject
 
     public static ThemeModel Default => new();
 
+    public static IReadOnlyList<string> SuperThemeNames { get; } = new[]
+    {
+        "Default",
+        "Ocean",
+        "Forest",
+        "Crimson",
+        "Midnight",
+        "Amethyst",
+        "Light"
+    };
+
+    public void ApplySuperTheme(string name)
+    {
+        switch (name)
+        {
+            case "Ocean":
+                Background = ColorFromRgb(14, 20, 33);
+                TopBar = ColorFromRgb(18, 30, 48);
+                Sidebar = ColorFromRgb(17, 27, 44);
+                Accent = ColorFromRgb(48, 164, 255);
+                ElementBG = ColorFromRgb(27, 40, 62);
+                SliderTrack = ColorFromRgb(44, 72, 110);
+                break;
+            case "Forest":
+                Background = ColorFromRgb(19, 26, 19);
+                TopBar = ColorFromRgb(27, 39, 27);
+                Sidebar = ColorFromRgb(24, 36, 24);
+                Accent = ColorFromRgb(70, 194, 108);
+                ElementBG = ColorFromRgb(33, 49, 33);
+                SliderTrack = ColorFromRgb(43, 74, 52);
+                break;
+            case "Crimson":
+                Background = ColorFromRgb(24, 15, 18);
+                TopBar = ColorFromRgb(35, 18, 24);
+                Sidebar = ColorFromRgb(30, 17, 21);
+                Accent = ColorFromRgb(228, 69, 93);
+                ElementBG = ColorFromRgb(47, 24, 32);
+                SliderTrack = ColorFromRgb(89, 33, 49);
+                break;
+            case "Midnight":
+                Background = ColorFromRgb(13, 14, 24);
+                TopBar = ColorFromRgb(20, 22, 36);
+                Sidebar = ColorFromRgb(18, 20, 33);
+                Accent = ColorFromRgb(140, 122, 255);
+                ElementBG = ColorFromRgb(31, 34, 52);
+                SliderTrack = ColorFromRgb(57, 60, 92);
+                break;
+            case "Amethyst":
+                Background = ColorFromRgb(24, 19, 33);
+                TopBar = ColorFromRgb(33, 25, 45);
+                Sidebar = ColorFromRgb(29, 22, 40);
+                Accent = ColorFromRgb(193, 120, 255);
+                ElementBG = ColorFromRgb(43, 33, 58);
+                SliderTrack = ColorFromRgb(73, 55, 97);
+                break;
+            case "Light":
+                Background = ColorFromRgb(241, 244, 248);
+                TopBar = ColorFromRgb(230, 235, 243);
+                Sidebar = ColorFromRgb(234, 239, 246);
+                Accent = ColorFromRgb(47, 102, 224);
+                ElementBG = ColorFromRgb(223, 229, 238);
+                SliderTrack = ColorFromRgb(191, 200, 214);
+                TextPrimary = ColorFromRgb(20, 24, 34);
+                TextSecondary = ColorFromRgb(45, 54, 70);
+                TextMuted = ColorFromRgb(74, 85, 105);
+                break;
+            default:
+                ApplyPreset(new ThemeModel());
+                break;
+        }
+    }
+
+    private void ApplyPreset(ThemeModel preset)
+    {
+        Background = preset.Background;
+        TopBar = preset.TopBar;
+        Sidebar = preset.Sidebar;
+        TabDefault = preset.TabDefault;
+        TabActive = preset.TabActive;
+        TextPrimary = preset.TextPrimary;
+        TextSecondary = preset.TextSecondary;
+        TextMuted = preset.TextMuted;
+        Accent = preset.Accent;
+        ToggleOff = preset.ToggleOff;
+        ElementBG = preset.ElementBG;
+        ElementHover = preset.ElementHover;
+        InputBG = preset.InputBG;
+        SliderTrack = preset.SliderTrack;
+        NotifBG = preset.NotifBG;
+    }
+
     public string ColorToHex(Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
 
     public static Color HexToColor(string hex)

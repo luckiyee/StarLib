@@ -57,8 +57,8 @@ public class ProjectSerializationTests
     public void Project_SchemaVersion_IsSet()
     {
         var project = StarLibProject.CreateDefault();
-        Assert.Equal("1.0", project.Meta.SchemaVersion);
-        Assert.Equal("1.0.0", project.Meta.AppVersion);
+        Assert.Equal("2.0", project.Meta.SchemaVersion);
+        Assert.Equal("2.0.0", project.Meta.AppVersion);
     }
 
     [Fact]

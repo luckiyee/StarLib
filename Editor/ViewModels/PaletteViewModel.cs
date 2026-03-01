@@ -30,34 +30,24 @@ public partial class PaletteViewModel : ObservableObject
             new PaletteItem(WidgetType.Section, "Section", "Header label"),
             new PaletteItem(WidgetType.Label, "Label", "Text label"),
             new PaletteItem(WidgetType.Paragraph, "Paragraph", "Title + content block"),
+            new PaletteItem(WidgetType.Separator, "Separator", "Divider line"),
+            new PaletteItem(WidgetType.Spacer, "Spacer", "Vertical spacing"),
         }));
 
-        Groups.Add(new PaletteGroup("ELEMENTS", new[]
+        Groups.Add(new PaletteGroup("INTERACTIVE", new[]
         {
             new PaletteItem(WidgetType.Button, "Button", "Clickable button"),
             new PaletteItem(WidgetType.Toggle, "Toggle", "On/off switch"),
             new PaletteItem(WidgetType.Slider, "Slider", "Value slider"),
-            new PaletteItem(WidgetType.Dropdown, "Dropdown", "Selection list"),
+            new PaletteItem(WidgetType.Dropdown, "Dropdown", "Single or multi-select"),
             new PaletteItem(WidgetType.Input, "Input", "Text input field"),
             new PaletteItem(WidgetType.Keybind, "Keybind", "Key binding picker"),
             new PaletteItem(WidgetType.ColorPicker, "ColorPicker", "Color picker"),
         }));
 
-        Groups.Add(new PaletteGroup("LAYOUT & TEXT", new[]
+        Groups.Add(new PaletteGroup("RAYFIELD GEN2", new[]
         {
-            new PaletteItem(WidgetType.Separator, "Separator", "Horizontal line"),
-            new PaletteItem(WidgetType.Spacer, "Spacer", "Empty space"),
-        }));
-
-        Groups.Add(new PaletteGroup("CONTAINERS", new[]
-        {
-            new PaletteItem(WidgetType.HorizontalRow, "HorizontalRow", "Horizontal layout"),
-            new PaletteItem(WidgetType.VerticalStack, "VerticalStack", "Vertical layout"),
-            new PaletteItem(WidgetType.GridContainer, "GridContainer", "Grid layout"),
-        }));
-
-        Groups.Add(new PaletteGroup("ADVANCED", new[]
-        {
+            new PaletteItem(WidgetType.Stat, "Stat", "Live stat readout"),
             new PaletteItem(WidgetType.ProgressBar, "ProgressBar", "Progress indicator"),
             new PaletteItem(WidgetType.Table, "Table", "Data table/grid"),
             new PaletteItem(WidgetType.Badge, "Badge", "Status badge/chip"),

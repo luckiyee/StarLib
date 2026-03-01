@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using StarLibEditor.Models;
@@ -13,9 +14,6 @@ public class CodeGeneratorService
     {
         _usedVarNames.Clear();
         var sb = new StringBuilder();
-        var useUpgraded = project.Settings.UseUpgradedStarLib;
-        var starLibFile = useUpgraded ? "StarLibUpgraded.lua" : "StarLib.lua";
-        var needsUpgrade = ProjectUsesUpgradedFeatures(project);
 
         if (!minify)
         {
@@ -23,12 +21,9 @@ public class CodeGeneratorService
             sb.AppendLine($"-- Project: {project.Meta.ProjectName}");
             sb.AppendLine($"-- Exported: {DateTime.UtcNow:o}");
             sb.AppendLine();
-
-            if (needsUpgrade && !useUpgraded)
-                sb.AppendLine("-- NOTE: This script requires StarLibUpgraded.lua, not StarLib.lua");
         }
 
-        sb.AppendLine($"local StarLib = loadstring(readfile(\"{project.Settings.StarLibPath.Replace("\\", "/")}\"))()");
+        sb.AppendLine($"local StarLib = loadstring(readfile(\"{EscapeLua(project.Settings.StarLibPath.Replace("\\", "/"))}\"))()");
         sb.AppendLine();
 
         GenerateWindowConfig(sb, project, minify);
@@ -36,15 +31,12 @@ public class CodeGeneratorService
 
         foreach (var tab in project.Tabs)
         {
-            GenerateTab(sb, project, tab, minify);
+            GenerateTab(sb, tab, minify);
             sb.AppendLine();
         }
 
         var result = sb.ToString();
-        if (minify)
-            result = Minify(result);
-
-        return result;
+        return minify ? Minify(result) : result;
     }
 
     private void GenerateWindowConfig(StringBuilder sb, StarLibProject project, bool minify)
@@ -56,25 +48,58 @@ public class CodeGeneratorService
         if (!minify) sb.AppendLine("-- Window");
         sb.Append("local Window = StarLib:CreateWindow({");
 
-        sb.Append($"{nl}{indent}Name = \"{EscapeLua(w.Name)}\"");
+        sb.Append($"{nl}{indent}Name = \"{EscapeLua(w.Name)}\",");
+        sb.Append($"{nl}{indent}LoadingTitle = \"{EscapeLua(w.LoadingTitle)}\",");
+        sb.Append($"{nl}{indent}LoadingSubtitle = \"{EscapeLua(w.LoadingSubtitle)}\",");
+        sb.Append($"{nl}{indent}Theme = \"{EscapeLua(w.ThemePreset)}\",");
+        sb.Append($"{nl}{indent}Resizable = {ToLuaBool(w.Resizable)},");
+        sb.Append($"{nl}{indent}EnableSearch = {ToLuaBool(w.EnableSearch)},");
+        if (!string.IsNullOrWhiteSpace(w.Icon))
+            sb.Append($"{nl}{indent}Icon = \"{EscapeLua(w.Icon)}\",");
+        if (!string.IsNullOrWhiteSpace(w.ToggleKey))
+            sb.Append($"{nl}{indent}ToggleKey = Enum.KeyCode.{w.ToggleKey},");
 
-        if (w.GuiName != "StarLibGui")
-            sb.Append($",{nl}{indent}GuiName = \"{EscapeLua(w.GuiName)}\"");
+        sb.Append($"{nl}{indent}ConfigurationSaving = {{");
+        sb.Append($"{nl}{indent}{indent}Enabled = {ToLuaBool(w.ConfigurationSaving.Enabled)},");
+        sb.Append($"{nl}{indent}{indent}FolderName = \"{EscapeLua(w.ConfigurationSaving.FolderName)}\",");
+        sb.Append($"{nl}{indent}{indent}FileName = \"{EscapeLua(w.ConfigurationSaving.FileName)}\"");
+        sb.Append($"{nl}{indent}}},");
 
-        if (!string.IsNullOrEmpty(w.ToggleKey))
-            sb.Append($",{nl}{indent}ToggleKey = Enum.KeyCode.{w.ToggleKey}");
+        sb.Append($"{nl}{indent}Discord = {{");
+        sb.Append($"{nl}{indent}{indent}Enabled = {ToLuaBool(w.Discord.Enabled)},");
+        sb.Append($"{nl}{indent}{indent}Invite = \"{EscapeLua(w.Discord.Invite)}\",");
+        sb.Append($"{nl}{indent}{indent}RememberJoins = {ToLuaBool(w.Discord.RememberPrompt)}");
+        sb.Append($"{nl}{indent}}},");
+
+        var keys = ParseCsv(w.KeySystem.ValidKeysCsv);
+        sb.Append($"{nl}{indent}KeySystem = {{");
+        sb.Append($"{nl}{indent}{indent}Enabled = {ToLuaBool(w.KeySystem.Enabled)},");
+        sb.Append($"{nl}{indent}{indent}Title = \"{EscapeLua(w.KeySystem.Title)}\",");
+        sb.Append($"{nl}{indent}{indent}Subtitle = \"{EscapeLua(w.KeySystem.Subtitle)}\",");
+        sb.Append($"{nl}{indent}{indent}Note = \"{EscapeLua(w.KeySystem.Note)}\",");
+        sb.Append($"{nl}{indent}{indent}SaveKey = \"{EscapeLua(w.KeySystem.SaveKey)}\",");
+        sb.Append($"{nl}{indent}{indent}GrabKeyFromSite = {ToLuaBool(w.KeySystem.GrabKeyFromSite)},");
+        sb.Append($"{nl}{indent}{indent}KeyUrl = \"{EscapeLua(w.KeySystem.KeyUrl)}\",");
+        sb.Append($"{nl}{indent}{indent}Keys = {{ {string.Join(", ", keys.Select(k => $"\"{EscapeLua(k)}\""))} }}");
+        sb.Append($"{nl}{indent}}},");
+
+        sb.Append($"{nl}{indent}Monetization = {{");
+        sb.Append($"{nl}{indent}{indent}Enabled = {ToLuaBool(w.Monetization.Enabled)},");
+        sb.Append($"{nl}{indent}{indent}Strategy = \"{EscapeLua(w.Monetization.Strategy)}\",");
+        sb.Append($"{nl}{indent}{indent}Details = \"{EscapeLua(w.Monetization.Details)}\"");
+        sb.Append($"{nl}{indent}}}");
 
         var themeOverrides = w.Theme.GetOverrides();
         if (themeOverrides.Count > 0)
         {
-            sb.Append($",{nl}{indent}Theme = {{");
+            sb.Append($",{nl}{indent}ThemeOverrides = {{");
             var first = true;
             foreach (var kv in themeOverrides.OrderBy(k => k.Key))
             {
                 if (!first) sb.Append(",");
                 first = false;
-                var hexToRgb = ThemeModel.HexToColor(kv.Value);
-                sb.Append($"{nl}{indent}{indent}{kv.Key} = Color3.fromRGB({hexToRgb.R}, {hexToRgb.G}, {hexToRgb.B})");
+                var rgb = ThemeModel.HexToColor(kv.Value);
+                sb.Append($"{nl}{indent}{indent}{kv.Key} = Color3.fromRGB({rgb.R}, {rgb.G}, {rgb.B})");
             }
             sb.Append($"{nl}{indent}}}");
         }
@@ -82,244 +107,217 @@ public class CodeGeneratorService
         sb.AppendLine($"{nl}}})");
     }
 
-    private void GenerateTab(StringBuilder sb, StarLibProject project, TabModel tab, bool minify)
+    private void GenerateTab(StringBuilder sb, TabModel tab, bool minify)
     {
         var tabVar = MakeSafeVarName("Tab", tab.Name);
-        var indent = minify ? "" : "    ";
-        var nl = minify ? " " : "\n";
 
         if (!minify) sb.AppendLine($"-- Tab: {tab.Name}");
-        sb.AppendLine($"local {tabVar} = Window:CreateTab(\"{EscapeLua(tab.Name)}\")");
+        sb.AppendLine($"local {tabVar} = Window:CreateTab({{");
+        sb.AppendLine($"    Name = \"{EscapeLua(tab.Name)}\",");
+        if (!string.IsNullOrWhiteSpace(tab.Icon))
+            sb.AppendLine($"    Icon = \"{EscapeLua(tab.Icon)}\"");
+        else
+            sb.AppendLine("    Icon = \"square\"");
+        sb.AppendLine("})");
 
         foreach (var node in tab.Nodes)
         {
             if (!node.Enabled) continue;
-            GenerateNode(sb, tabVar, node, minify);
+            GenerateNode(sb, tabVar, node);
         }
     }
 
-    private void GenerateNode(StringBuilder sb, string tabVar, UINode node, bool minify)
+    private void GenerateNode(StringBuilder sb, string tabVar, UINode node)
     {
-        var indent = minify ? "" : "    ";
-        var nl = minify ? " " : "\n";
-
         switch (node.Type)
         {
             case WidgetType.Section:
                 sb.AppendLine($"{tabVar}:CreateSection(\"{EscapeLua(GetProp(node, "Text", "Section"))}\")");
-                break;
-
+                return;
             case WidgetType.Label:
-                EmitWithOptionalBinding(sb, tabVar, node, minify,
-                    $"{tabVar}:CreateLabel(\"{EscapeLua(GetProp(node, "Text", "Label"))}\")");
-                break;
-
+                EmitInlineOrBound(sb, node, $"{tabVar}:CreateLabel(\"{EscapeLua(GetProp(node, "Text", "Label"))}\")");
+                return;
             case WidgetType.Paragraph:
-                sb.AppendLine($"{tabVar}:CreateParagraph({{");
-                sb.AppendLine($"{indent}Title = \"{EscapeLua(GetProp(node, "Title", ""))}\",");
-                sb.AppendLine($"{indent}Content = \"{EscapeLua(GetProp(node, "Content", ""))}\"");
-                sb.AppendLine("})");
-                break;
-
+                EmitInlineOrBound(sb, node,
+                    $"{tabVar}:CreateParagraph({{Title = \"{EscapeLua(GetProp(node, "Title", ""))}\", Content = \"{EscapeLua(GetProp(node, "Content", ""))}\"}})");
+                return;
             case WidgetType.Button:
-                EmitWithOptionalBinding(sb, tabVar, node, minify, null);
-                sb.AppendLine($"{tabVar}:CreateButton({{");
-                sb.AppendLine($"{indent}Name = \"{EscapeLua(GetProp(node, "Name", "Button"))}\",");
-                sb.AppendLine($"{indent}Callback = function()");
-                EmitCallbackBody(sb, node, indent + indent);
-                sb.AppendLine($"{indent}end");
-                sb.Append("})");
-                if (node.BindVariable != null) sb.AppendLine(); else sb.AppendLine();
-                break;
-
+                EmitWidgetStart(sb, node, tabVar, "CreateButton");
+                sb.AppendLine($"    Name = \"{EscapeLua(GetProp(node, "Name", "Button"))}\",");
+                EmitCommonWidgetProps(sb, node);
+                sb.AppendLine("    Callback = function()");
+                EmitCallbackBody(sb, node, "        ");
+                sb.AppendLine("    end");
+                sb.AppendLine("})");
+                return;
             case WidgetType.Toggle:
-                EmitWidgetWithConfig(sb, tabVar, node, "CreateToggle", minify, new[]
-                {
-                    ("Name", GetProp(node, "Name", "Toggle"), "string"),
-                    ("CurrentValue", GetBoolProp(node, "CurrentValue") ? "true" : "false", "literal"),
-                    ("Callback", "CALLBACK_BOOL", "callback"),
-                });
-                break;
-
+                EmitWidgetStart(sb, node, tabVar, "CreateToggle");
+                sb.AppendLine($"    Name = \"{EscapeLua(GetProp(node, "Name", "Toggle"))}\",");
+                EmitCommonWidgetProps(sb, node);
+                sb.AppendLine($"    CurrentValue = {ToLuaBool(GetBoolProp(node, "CurrentValue"))},");
+                sb.AppendLine($"    Flag = \"{EscapeLua(GetProp(node, "Flag", "ToggleFlag"))}\",");
+                sb.AppendLine("    Callback = function(value)");
+                EmitCallbackBody(sb, node, "        ");
+                sb.AppendLine("    end");
+                sb.AppendLine("})");
+                return;
             case WidgetType.Slider:
-                var min = GetNumProp(node, "Min", 0);
-                var max = GetNumProp(node, "Max", 100);
-                var cur = GetNumProp(node, "CurrentValue", 50);
-                var inc = GetNumProp(node, "Increment", 1);
-                var suffix = GetProp(node, "Suffix", "");
-
-                EmitWidgetStart(sb, tabVar, node, "CreateSlider", minify);
-                sb.AppendLine($"{indent}Name = \"{EscapeLua(GetProp(node, "Name", "Slider"))}\",");
-                sb.AppendLine($"{indent}Range = {{{FormatNum(min)}, {FormatNum(max)}}},");
-                sb.AppendLine($"{indent}CurrentValue = {FormatNum(cur)},");
-                sb.AppendLine($"{indent}Increment = {FormatNum(inc)},");
-                if (!string.IsNullOrEmpty(suffix))
-                    sb.AppendLine($"{indent}Suffix = \"{EscapeLua(suffix)}\",");
-                sb.AppendLine($"{indent}Callback = function(value)");
-                EmitCallbackBody(sb, node, indent + indent);
-                sb.AppendLine($"{indent}end");
+                EmitWidgetStart(sb, node, tabVar, "CreateSlider");
+                sb.AppendLine($"    Name = \"{EscapeLua(GetProp(node, "Name", "Slider"))}\",");
+                EmitCommonWidgetProps(sb, node);
+                sb.AppendLine($"    Range = {{{FormatNum(GetNumProp(node, "Min", 0))}, {FormatNum(GetNumProp(node, "Max", 100))}}},");
+                sb.AppendLine($"    Increment = {FormatNum(GetNumProp(node, "Increment", 1))},");
+                sb.AppendLine($"    Suffix = \"{EscapeLua(GetProp(node, "Suffix", ""))}\",");
+                sb.AppendLine($"    CurrentValue = {FormatNum(GetNumProp(node, "CurrentValue", 50))},");
+                sb.AppendLine($"    Flag = \"{EscapeLua(GetProp(node, "Flag", "SliderFlag"))}\",");
+                sb.AppendLine("    Callback = function(value)");
+                EmitCallbackBody(sb, node, "        ");
+                sb.AppendLine("    end");
                 sb.AppendLine("})");
-                break;
-
+                return;
             case WidgetType.Dropdown:
-                var options = node.Props["Options"];
-                var optList = options is ObservableCollection<string> oc ? oc.ToList() : new List<string>();
-                var defaultVal = GetProp(node, "Default", optList.FirstOrDefault() ?? "");
-
-                EmitWidgetStart(sb, tabVar, node, "CreateDropdown", minify);
-                sb.AppendLine($"{indent}Name = \"{EscapeLua(GetProp(node, "Name", "Dropdown"))}\",");
-                sb.Append($"{indent}Options = {{");
-                sb.Append(string.Join(", ", optList.Select(o => $"\"{EscapeLua(o)}\"")));
-                sb.AppendLine("},");
-                sb.AppendLine($"{indent}Default = \"{EscapeLua(defaultVal)}\",");
-                sb.AppendLine($"{indent}Callback = function(value)");
-                EmitCallbackBody(sb, node, indent + indent);
-                sb.AppendLine($"{indent}end");
+                var options = GetStringCollection(node, "Options");
+                var multi = GetBoolProp(node, "MultipleOptions");
+                EmitWidgetStart(sb, node, tabVar, "CreateDropdown");
+                sb.AppendLine($"    Name = \"{EscapeLua(GetProp(node, "Name", "Dropdown"))}\",");
+                EmitCommonWidgetProps(sb, node);
+                sb.AppendLine($"    Options = {{ {string.Join(", ", options.Select(o => $"\"{EscapeLua(o)}\""))} }},");
+                sb.AppendLine($"    MultipleOptions = {ToLuaBool(multi)},");
+                if (multi)
+                {
+                    var selected = ParseCsv(GetProp(node, "CurrentOption", ""));
+                    if (selected.Count == 0 && options.Count > 0) selected.Add(options[0]);
+                    sb.AppendLine($"    CurrentOption = {{ {string.Join(", ", selected.Select(o => $"\"{EscapeLua(o)}\""))} }},");
+                }
+                else
+                {
+                    sb.AppendLine($"    CurrentOption = \"{EscapeLua(GetProp(node, "CurrentOption", options.FirstOrDefault() ?? ""))}\",");
+                }
+                sb.AppendLine($"    Flag = \"{EscapeLua(GetProp(node, "Flag", "DropdownFlag"))}\",");
+                sb.AppendLine("    Callback = function(value)");
+                EmitCallbackBody(sb, node, "        ");
+                sb.AppendLine("    end");
                 sb.AppendLine("})");
-                break;
-
+                return;
             case WidgetType.Input:
-                EmitWidgetStart(sb, tabVar, node, "CreateInput", minify);
-                sb.AppendLine($"{indent}Name = \"{EscapeLua(GetProp(node, "Name", "Input"))}\",");
-                var ph = GetProp(node, "PlaceholderText", "...");
-                if (ph != "...") sb.AppendLine($"{indent}PlaceholderText = \"{EscapeLua(ph)}\",");
-                var def = GetProp(node, "Default", "");
-                if (!string.IsNullOrEmpty(def)) sb.AppendLine($"{indent}Default = \"{EscapeLua(def)}\",");
-                if (GetBoolProp(node, "ClearOnEnter")) sb.AppendLine($"{indent}ClearOnEnter = true,");
-                sb.AppendLine($"{indent}Callback = function(text)");
-                EmitCallbackBody(sb, node, indent + indent);
-                sb.AppendLine($"{indent}end");
+                EmitWidgetStart(sb, node, tabVar, "CreateInput");
+                sb.AppendLine($"    Name = \"{EscapeLua(GetProp(node, "Name", "Input"))}\",");
+                EmitCommonWidgetProps(sb, node);
+                sb.AppendLine($"    PlaceholderText = \"{EscapeLua(GetProp(node, "PlaceholderText", "..."))}\",");
+                sb.AppendLine($"    RemoveTextAfterFocusLost = {ToLuaBool(GetBoolProp(node, "RemoveTextAfterFocusLost"))},");
+                sb.AppendLine($"    Flag = \"{EscapeLua(GetProp(node, "Flag", "InputFlag"))}\",");
+                sb.AppendLine("    Callback = function(text)");
+                EmitCallbackBody(sb, node, "        ");
+                sb.AppendLine("    end");
                 sb.AppendLine("})");
-                break;
-
+                return;
             case WidgetType.Keybind:
-                var keyDefault = GetProp(node, "Default", "F");
-                EmitWidgetStart(sb, tabVar, node, "CreateKeybind", minify);
-                sb.AppendLine($"{indent}Name = \"{EscapeLua(GetProp(node, "Name", "Keybind"))}\",");
-                sb.AppendLine($"{indent}Default = Enum.KeyCode.{keyDefault},");
-                sb.AppendLine($"{indent}Callback = function(key)");
-                EmitCallbackBody(sb, node, indent + indent);
-                sb.AppendLine($"{indent}end,");
-                sb.AppendLine($"{indent}OnPress = function()");
-                sb.AppendLine($"{indent}{indent}--[[ TODO: Add OnPress handler ]]");
-                sb.AppendLine($"{indent}end");
+                EmitWidgetStart(sb, node, tabVar, "CreateKeybind");
+                sb.AppendLine($"    Name = \"{EscapeLua(GetProp(node, "Name", "Keybind"))}\",");
+                sb.AppendLine($"    CurrentKeybind = \"{EscapeLua(GetProp(node, "Default", "F"))}\",");
+                sb.AppendLine($"    HoldToInteract = {ToLuaBool(GetBoolProp(node, "HoldToInteract"))},");
+                sb.AppendLine($"    Flag = \"{EscapeLua(GetProp(node, "Flag", "KeybindFlag"))}\",");
+                sb.AppendLine("    Callback = function(key)");
+                EmitCallbackBody(sb, node, "        ");
+                sb.AppendLine("    end");
                 sb.AppendLine("})");
-                break;
-
+                return;
             case WidgetType.ColorPicker:
-                var colorDef = GetProp(node, "Default", "#FFFFFF");
-                var cc = ThemeModel.HexToColor(colorDef);
-                EmitWidgetStart(sb, tabVar, node, "CreateColorPicker", minify);
-                sb.AppendLine($"{indent}Name = \"{EscapeLua(GetProp(node, "Name", "Color"))}\",");
-                sb.AppendLine($"{indent}Default = Color3.fromRGB({cc.R}, {cc.G}, {cc.B}),");
-                sb.AppendLine($"{indent}Callback = function(color)");
-                EmitCallbackBody(sb, node, indent + indent);
-                sb.AppendLine($"{indent}end");
+                var color = ThemeModel.HexToColor(GetProp(node, "Default", "#FFFFFF"));
+                EmitWidgetStart(sb, node, tabVar, "CreateColorPicker");
+                sb.AppendLine($"    Name = \"{EscapeLua(GetProp(node, "Name", "Color"))}\",");
+                EmitCommonWidgetProps(sb, node);
+                sb.AppendLine($"    Color = Color3.fromRGB({color.R}, {color.G}, {color.B}),");
+                sb.AppendLine($"    Flag = \"{EscapeLua(GetProp(node, "Flag", "ColorFlag"))}\",");
+                sb.AppendLine("    Callback = function(value)");
+                EmitCallbackBody(sb, node, "        ");
+                sb.AppendLine("    end");
                 sb.AppendLine("})");
-                break;
-
-            // Upgraded widgets
+                return;
+            case WidgetType.Stat:
+                EmitWidgetStart(sb, node, tabVar, "CreateStat");
+                sb.AppendLine($"    Name = \"{EscapeLua(GetProp(node, "Name", "Stat"))}\",");
+                sb.AppendLine($"    Value = \"{EscapeLua(GetProp(node, "Value", "0"))}\",");
+                sb.AppendLine($"    Suffix = \"{EscapeLua(GetProp(node, "Suffix", ""))}\"");
+                sb.AppendLine("})");
+                return;
             case WidgetType.Separator:
                 sb.AppendLine($"{tabVar}:CreateSeparator()");
-                break;
-
+                return;
             case WidgetType.Spacer:
-                var spacerH = GetNumProp(node, "Height", 10);
-                sb.AppendLine($"{tabVar}:CreateSpacer({{ Height = {FormatNum(spacerH)} }})");
-                break;
-
+                sb.AppendLine($"{tabVar}:CreateSpacer({{ Height = {FormatNum(GetNumProp(node, "Height", 10))} }})");
+                return;
             case WidgetType.ProgressBar:
-                EmitWidgetStart(sb, tabVar, node, "CreateProgressBar", minify);
-                sb.AppendLine($"{indent}Name = \"{EscapeLua(GetProp(node, "Name", "Progress"))}\",");
-                sb.AppendLine($"{indent}Min = {FormatNum(GetNumProp(node, "Min", 0))},");
-                sb.AppendLine($"{indent}Max = {FormatNum(GetNumProp(node, "Max", 100))},");
-                sb.AppendLine($"{indent}Default = {FormatNum(GetNumProp(node, "Default", 0))},");
-                if (GetBoolProp(node, "ShowLabel")) sb.AppendLine($"{indent}ShowLabel = true,");
-                sb.AppendLine($"{indent}Height = {FormatNum(GetNumProp(node, "Height", 12))}");
+                EmitWidgetStart(sb, node, tabVar, "CreateProgressBar");
+                sb.AppendLine($"    Name = \"{EscapeLua(GetProp(node, "Name", "Progress"))}\",");
+                sb.AppendLine($"    Min = {FormatNum(GetNumProp(node, "Min", 0))},");
+                sb.AppendLine($"    Max = {FormatNum(GetNumProp(node, "Max", 100))},");
+                sb.AppendLine($"    Default = {FormatNum(GetNumProp(node, "Default", 0))},");
+                sb.AppendLine($"    ShowLabel = {ToLuaBool(GetBoolProp(node, "ShowLabel"))},");
+                sb.AppendLine($"    Height = {FormatNum(GetNumProp(node, "Height", 12))}");
                 sb.AppendLine("})");
-                break;
-
+                return;
             case WidgetType.Badge:
-                var badgeCol = GetProp(node, "Color", "#00C864");
-                var bc = ThemeModel.HexToColor(badgeCol);
-                var badgeTc = GetProp(node, "TextColor", "#000000");
-                var btc = ThemeModel.HexToColor(badgeTc);
-                EmitWidgetStart(sb, tabVar, node, "CreateBadge", minify);
-                sb.AppendLine($"{indent}Name = \"{EscapeLua(GetProp(node, "Name", "Badge"))}\",");
-                sb.AppendLine($"{indent}Text = \"{EscapeLua(GetProp(node, "Text", "Badge"))}\",");
-                sb.AppendLine($"{indent}Color = Color3.fromRGB({bc.R}, {bc.G}, {bc.B}),");
-                sb.AppendLine($"{indent}TextColor = Color3.fromRGB({btc.R}, {btc.G}, {btc.B})");
+                var bc = ThemeModel.HexToColor(GetProp(node, "Color", "#00C864"));
+                var btc = ThemeModel.HexToColor(GetProp(node, "TextColor", "#000000"));
+                EmitWidgetStart(sb, node, tabVar, "CreateBadge");
+                sb.AppendLine($"    Name = \"{EscapeLua(GetProp(node, "Name", "Badge"))}\",");
+                sb.AppendLine($"    Text = \"{EscapeLua(GetProp(node, "Text", "Badge"))}\",");
+                sb.AppendLine($"    Color = Color3.fromRGB({bc.R}, {bc.G}, {bc.B}),");
+                sb.AppendLine($"    TextColor = Color3.fromRGB({btc.R}, {btc.G}, {btc.B})");
                 sb.AppendLine("})");
-                break;
-
+                return;
             case WidgetType.Table:
-                EmitWidgetStart(sb, tabVar, node, "CreateTable", minify);
-                sb.AppendLine($"{indent}Name = \"{EscapeLua(GetProp(node, "Name", "Table"))}\",");
-                var cols = node.Props["Columns"];
-                var colList = cols is ObservableCollection<string> cl ? cl.ToList() : new List<string>();
-                sb.Append($"{indent}Columns = {{");
-                sb.Append(string.Join(", ", colList.Select(c => $"\"{EscapeLua(c)}\"")));
-                sb.AppendLine("},");
-                sb.AppendLine($"{indent}Rows = {{}},");
-                sb.AppendLine($"{indent}RowHeight = {FormatNum(GetNumProp(node, "RowHeight", 28))},");
-                sb.AppendLine($"{indent}MaxHeight = {FormatNum(GetNumProp(node, "MaxHeight", 200))}");
+                var cols = GetStringCollection(node, "Columns");
+                EmitWidgetStart(sb, node, tabVar, "CreateTable");
+                sb.AppendLine($"    Name = \"{EscapeLua(GetProp(node, "Name", "Table"))}\",");
+                sb.AppendLine($"    Columns = {{ {string.Join(", ", cols.Select(c => $"\"{EscapeLua(c)}\""))} }},");
+                sb.AppendLine("    Rows = {},");
+                sb.AppendLine($"    RowHeight = {FormatNum(GetNumProp(node, "RowHeight", 28))},");
+                sb.AppendLine($"    MaxHeight = {FormatNum(GetNumProp(node, "MaxHeight", 200))}");
                 sb.AppendLine("})");
-                break;
+                return;
+            default:
+                sb.AppendLine($"-- Unsupported widget in exporter: {node.Type}");
+                return;
         }
     }
 
-    private void EmitWidgetStart(StringBuilder sb, string tabVar, UINode node, string constructor, bool minify)
+    private static void EmitCommonWidgetProps(StringBuilder sb, UINode node)
     {
-        if (node.BindVariable != null)
+        var desc = GetProp(node, "Description", "");
+        var icon = GetProp(node, "Icon", "");
+        if (!string.IsNullOrWhiteSpace(desc))
+            sb.AppendLine($"    Description = \"{EscapeLua(desc)}\",");
+        if (!string.IsNullOrWhiteSpace(icon))
+            sb.AppendLine($"    Icon = \"{EscapeLua(icon)}\",");
+    }
+
+    private static void EmitWidgetStart(StringBuilder sb, UINode node, string tabVar, string constructor)
+    {
+        if (!string.IsNullOrWhiteSpace(node.BindVariable))
             sb.Append($"local {node.BindVariable} = ");
         sb.AppendLine($"{tabVar}:{constructor}({{");
     }
 
-    private void EmitWithOptionalBinding(StringBuilder sb, string tabVar, UINode node, bool minify, string? inlineCall)
+    private static void EmitInlineOrBound(StringBuilder sb, UINode node, string inlineCall)
     {
-        if (inlineCall != null)
-        {
-            if (node.BindVariable != null)
-                sb.AppendLine($"local {node.BindVariable} = {inlineCall}");
-            else
-                sb.AppendLine(inlineCall);
-        }
+        if (!string.IsNullOrWhiteSpace(node.BindVariable))
+            sb.AppendLine($"local {node.BindVariable} = {inlineCall}");
+        else
+            sb.AppendLine(inlineCall);
     }
 
-    private void EmitWidgetWithConfig(StringBuilder sb, string tabVar, UINode node, string constructor, bool minify,
-        (string key, string value, string type)[] props)
-    {
-        var indent = minify ? "" : "    ";
-        EmitWidgetStart(sb, tabVar, node, constructor, minify);
-
-        foreach (var (key, value, type) in props)
-        {
-            if (type == "string")
-                sb.AppendLine($"{indent}{key} = \"{EscapeLua(value)}\",");
-            else if (type == "literal")
-                sb.AppendLine($"{indent}{key} = {value},");
-            else if (type == "callback")
-            {
-                sb.AppendLine($"{indent}Callback = function(value)");
-                EmitCallbackBody(sb, node, indent + indent);
-                sb.AppendLine($"{indent}end");
-            }
-        }
-
-        sb.AppendLine("})");
-    }
-
-    private void EmitCallbackBody(StringBuilder sb, UINode node, string indent)
+    private static void EmitCallbackBody(StringBuilder sb, UINode node, string indent)
     {
         if (!string.IsNullOrWhiteSpace(node.CallbackCode))
         {
             foreach (var line in node.CallbackCode.Split('\n'))
                 sb.AppendLine($"{indent}{line.TrimEnd()}");
+            return;
         }
-        else
-        {
-            sb.AppendLine($"{indent}--[[ TODO: Add your callback here ]]");
-        }
+
+        sb.AppendLine($"{indent}--[[ TODO: Add your callback here ]]");
     }
 
     private string MakeSafeVarName(string prefix, string name)
@@ -346,20 +344,42 @@ public class CodeGeneratorService
     private static string GetProp(UINode node, string key, string defaultVal) =>
         node.Props[key]?.ToString() ?? defaultVal;
 
-    private static double GetNumProp(UINode node, string key, double defaultVal) =>
-        node.Props[key] is double d ? d : defaultVal;
+    private static double GetNumProp(UINode node, string key, double defaultVal)
+    {
+        var value = node.Props[key];
+        return value switch
+        {
+            double d => d,
+            int i => i,
+            string s when double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed) => parsed,
+            _ => defaultVal
+        };
+    }
 
     private static bool GetBoolProp(UINode node, string key) =>
         node.Props[key] is true;
 
-    private static string FormatNum(double v) =>
-        v == Math.Floor(v) ? ((int)v).ToString() : v.ToString("G");
+    private static List<string> GetStringCollection(UINode node, string key)
+    {
+        if (node.Props[key] is ObservableCollection<string> oc)
+            return oc.ToList();
+        if (node.Props[key] is IEnumerable<string> ie)
+            return ie.ToList();
+        if (node.Props[key] is string s && !string.IsNullOrWhiteSpace(s))
+            return ParseCsv(s);
+        return new List<string>();
+    }
 
-    private static bool ProjectUsesUpgradedFeatures(StarLibProject project) =>
-        project.Tabs.Any(t => t.Nodes.Any(n =>
-            n.Type is WidgetType.Separator or WidgetType.Spacer or WidgetType.ProgressBar
-            or WidgetType.Badge or WidgetType.Table or WidgetType.HorizontalRow
-            or WidgetType.VerticalStack or WidgetType.GridContainer));
+    private static List<string> ParseCsv(string csv) =>
+        csv.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+
+    private static string ToLuaBool(bool value) => value ? "true" : "false";
+
+    private static string FormatNum(double v) =>
+        v == Math.Floor(v) ? ((int)v).ToString(CultureInfo.InvariantCulture) : v.ToString("G", CultureInfo.InvariantCulture);
 
     private static string Minify(string lua)
     {

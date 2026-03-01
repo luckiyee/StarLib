@@ -25,7 +25,8 @@ public class CodeGeneratorTests
         project.Tabs[0].Name = "Combat";
         var lua = _gen.Generate(project);
 
-        Assert.Contains("Window:CreateTab(\"Combat\")", lua);
+        Assert.Contains("Name = \"Combat\"", lua);
+        Assert.Contains("Window:CreateTab({", lua);
     }
 
     [Fact]
@@ -118,7 +119,7 @@ public class CodeGeneratorTests
 
         var lua = _gen.Generate(project);
 
-        Assert.Contains("Theme = {", lua);
+        Assert.Contains("ThemeOverrides = {", lua);
         Assert.Contains("Accent = Color3.fromRGB(255, 0, 0)", lua);
         Assert.DoesNotContain("Background = Color3", lua);
     }
