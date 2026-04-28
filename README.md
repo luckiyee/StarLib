@@ -1,12 +1,8 @@
 # StarLib
 
-The most complete Roblox executor UI library ever made. StarLib is a single-file Lua module that gives you everything you need to build polished, feature-rich script GUIs — windows, tabs, 40+ widget types, themes, animations, notifications, modals, persistence, and much more.
+The most complete Roblox executor UI library ever made. StarLib is a single-file Lua module that gives you everything you need to build polished, feature-rich script GUIs — windows, tabs, many widget types, themes, animations, notifications, modals, persistence, and much more.
 
-## Repository Scope
-
-This repository now contains only the StarLib runtime library.
-
-## Quick Start
+## Example UI:
 
 ```lua
 local StarLib = loadstring(readfile("Main/StarLib.lua"))()
@@ -51,7 +47,7 @@ Tab:CreateSlider({
 - Multi-window manager — run multiple windows simultaneously
 - GUI protection (`syn.protect_gui` / `gethui` / CoreGui fallback)
 
-### Widgets (40+)
+### Widgets
 - **Basics** — Button, Toggle, Slider, Dropdown (searchable), MultiDropdown, Input, Keybind, ColorPicker (full HSV)
 - **Display** — Label, Paragraph, Section, Separator, Spacer, Badge, ProgressBar, CircularProgress, StatCard, ProfileCard, ImageCard
 - **Data** — Table, DataTable (sortable/filterable/paginated), RadioGroup, Accordion, CodeBlock, Graph (line/bar), TreeView, Timeline, PlayerList
